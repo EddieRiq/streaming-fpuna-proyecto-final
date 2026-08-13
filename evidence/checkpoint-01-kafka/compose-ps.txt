@@ -1,0 +1,3 @@
+﻿NAME         IMAGE                         COMMAND                  SERVICE      CREATED              STATUS                          PORTS
+kafka        confluentinc/cp-kafka:7.6.1   "/etc/confluent/dockΓÇª"   kafka        About a minute ago   Up About a minute (healthy)     0.0.0.0:9092->9092/tcp, [::]:9092->9092/tcp
+kafka-init   confluentinc/cp-kafka:7.6.1   "/bin/sh -c ' kafka-ΓÇª"   kafka-init   About a minute ago   Exited (0) About a minute ago   

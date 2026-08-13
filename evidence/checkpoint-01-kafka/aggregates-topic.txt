@@ -1,0 +1,4 @@
+﻿Topic: payments.aggregates.v1	TopicId: YtMBEmFOQIS2IV7urAbK2A	PartitionCount: 3	ReplicationFactor: 1	Configs: 
+	Topic: payments.aggregates.v1	Partition: 0	Leader: 1	Replicas: 1	Isr: 1
+	Topic: payments.aggregates.v1	Partition: 1	Leader: 1	Replicas: 1	Isr: 1
+	Topic: payments.aggregates.v1	Partition: 2	Leader: 1	Replicas: 1	Isr: 1

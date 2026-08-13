@@ -1,0 +1,2 @@
+﻿Topic: payments.events.dlq.v1	TopicId: UazXXxYuT8eHEOaDMhBDfA	PartitionCount: 1	ReplicationFactor: 1	Configs: 
+	Topic: payments.events.dlq.v1	Partition: 0	Leader: 1	Replicas: 1	Isr: 1

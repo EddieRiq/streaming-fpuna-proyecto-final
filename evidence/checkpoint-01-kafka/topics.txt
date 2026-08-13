@@ -1,0 +1,3 @@
+﻿payments.aggregates.v1
+payments.events.dlq.v1
+payments.events.v1

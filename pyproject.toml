@@ -1,0 +1,33 @@
+[project]
+name = "streaming-fpuna-proyecto-final"
+version = "0.1.0"
+description = "Proyecto integrador: monitoreo de pagos en tiempo real con Apache Kafka y Apache Beam."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "apache-beam==2.75.0",
+    "kafka-python==3.0.10",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3,<9",
+    "ruff>=0.9,<1",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
