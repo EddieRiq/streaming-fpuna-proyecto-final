@@ -39,8 +39,10 @@ evidence/       # capturas, logs y salidas de demostración
 
 ## Estado actual
 
-El productor sintético (`producer.py`) ya está implementado. Aún no están
-implementados pipeline.py ni materializer.py.
+El productor sintético y la primera capa del pipeline Beam ya están implementados.
+Esta etapa incluye parseo, validación del contrato, asignación de tiempo de evento
+y filtrado de pagos CONFIRMED. Permanecen pendientes las ventanas, la deduplicación,
+la agregación, KafkaIO y el materializador idempotente.
 
 ## Uso
 
