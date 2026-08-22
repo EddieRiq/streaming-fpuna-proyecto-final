@@ -39,16 +39,30 @@ evidence/       # capturas, logs y salidas de demostración
 
 ## Estado actual
 
-Este repositorio contiene únicamente la estructura base del proyecto. Aún no están
-implementados producer.py, pipeline.py ni materializer.py.
+El productor sintético (`producer.py`) ya está implementado. Aún no están
+implementados pipeline.py ni materializer.py.
 
-## Uso (cuando esté implementado)
+## Uso
 
 ```
 make up       # levanta Kafka y crea los tópicos
 make test     # corre la suite de pruebas
 make down     # detiene la infraestructura
+
+# inspección reproducible sin Kafka
+uv run python -m streaming_payments.producer.producer --scenario demo --dry-run
+
+# demo real contra Kafka con event_time cercano al momento de ejecución
+uv run python -m streaming_payments.producer.producer --scenario demo --start-now
+
+# stream normal reproducible
+uv run python -m streaming_payments.producer.producer --scenario normal --count 20 --seed 42
 ```
+
+La dirección de Kafka se resuelve como: flag `--bootstrap-servers` > variable de
+entorno `KAFKA_BOOTSTRAP_SERVERS` > default `localhost:9092` (para procesos en el
+host, como esta CLI). Servicios dentro de la red de `docker-compose` (por ejemplo,
+un futuro pipeline en contenedor) deben usar `kafka:29092`.
 
 ## Tópicos Kafka
 
