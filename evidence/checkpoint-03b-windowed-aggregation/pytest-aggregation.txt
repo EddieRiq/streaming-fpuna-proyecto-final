@@ -1,0 +1,19 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.13, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\Eduardo Riquelme\src\streaming-fpuna-proyecto-final\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\Eduardo Riquelme\src\streaming-fpuna-proyecto-final
+configfile: pyproject.toml
+collecting ... collected 10 items
+
+tests/test_aggregation.py::test_merge_accumulators_accepts_single_pass_iterable PASSED [ 10%]
+tests/test_aggregation.py::test_same_merchant_same_window_aggregates_count_and_total PASSED [ 20%]
+tests/test_aggregation.py::test_different_merchants_same_window_produce_separate_aggregates PASSED [ 30%]
+tests/test_aggregation.py::test_same_merchant_different_windows_produce_two_aggregates PASSED [ 40%]
+tests/test_aggregation.py::test_event_exactly_on_window_boundary_belongs_to_next_window PASSED [ 50%]
+tests/test_aggregation.py::test_window_start_and_window_end_are_correct_iso8601 PASSED [ 60%]
+tests/test_aggregation.py::test_aggregate_key_is_merchant_id_pipe_window_start PASSED [ 70%]
+tests/test_aggregation.py::test_total_amount_pyg_sums_exact_integers PASSED [ 80%]
+tests/test_aggregation.py::test_integration_raw_bytes_to_aggregate PASSED [ 90%]
+tests/test_aggregation.py::test_declined_and_pending_do_not_contribute_to_aggregates PASSED [100%]
+
+============================= 10 passed in 6.57s ==============================

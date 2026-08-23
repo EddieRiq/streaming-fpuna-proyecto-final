@@ -39,10 +39,16 @@ evidence/       # capturas, logs y salidas de demostración
 
 ## Estado actual
 
-El productor sintético y la primera capa del pipeline Beam ya están implementados.
-Esta etapa incluye parseo, validación del contrato, asignación de tiempo de evento
-y filtrado de pagos CONFIRMED. Permanecen pendientes las ventanas, la deduplicación,
-la agregación, KafkaIO y el materializador idempotente.
+El productor sintético, la primera capa del pipeline Beam y la agregación por
+ventana ya están implementados. Esto incluye: parseo y validación del contrato,
+asignación de tiempo de evento Beam basado en `event_time`, filtrado de pagos
+CONFIRMED, ventanas fijas de 60 segundos, y agregación incremental por
+`merchant_id` con `CombinePerKey`/`CombineFn` que produce `transaction_count`
+y `total_amount_pyg` por ventana, con una key de salida estable
+`merchant_id|window_start`.
+
+Permanecen pendientes: deduplicación, allowed lateness, triggers/panes,
+KafkaIO, DLQ Kafka real y el materializador idempotente.
 
 ## Uso
 

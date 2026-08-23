@@ -1,0 +1,13 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.13, pytest-8.4.2, pluggy-1.6.0
+rootdir: C:\Users\Eduardo Riquelme\src\streaming-fpuna-proyecto-final
+configfile: pyproject.toml
+testpaths: tests
+collected 59 items
+
+tests\test_aggregation.py ..........                                     [ 16%]
+tests\test_pipeline.py ......                                            [ 27%]
+tests\test_producer.py ........................                          [ 67%]
+tests\test_validation.py ...................                             [100%]
+
+============================= 59 passed in 8.83s ==============================

@@ -15,7 +15,10 @@ from datetime import datetime
 
 import apache_beam as beam
 from apache_beam.pvalue import TaggedOutput
-from apache_beam.transforms.window import TimestampedValue
+from apache_beam.transforms.window import FixedWindows, TimestampedValue
+from apache_beam.utils.timestamp import Timestamp
+
+from streaming_payments.common.config import WINDOW_SIZE_SECONDS
 
 VALID_STATUSES = ("CONFIRMED", "DECLINED", "PENDING")
 
@@ -185,9 +188,7 @@ class ParseAndValidateFn(beam.DoFn):
 
         result = validate_event(event)
         if not result.valid:
-            yield TaggedOutput(
-                self.INVALID_TAG, {"raw_data": event, "errors": result.errors}
-            )
+            yield TaggedOutput(self.INVALID_TAG, {"raw_data": event, "errors": result.errors})
             return
 
         timestamp = event_time_to_beam_timestamp(result.event)
@@ -204,3 +205,75 @@ def apply_parse_validate_filter(
     )
     confirmed = results.valid | "FilterConfirmed" >> beam.Filter(_is_confirmed)
     return confirmed, results.invalid
+
+
+# --- Agregación por ventana fija -------------------------------------------------
+
+
+def _to_merchant_amount_kv(event: dict[str, object]) -> tuple[str, int]:
+    """Estructura mínima por clave para CombinePerKey: (merchant_id, amount)."""
+    payload = event["payload"]
+    return payload["merchant_id"], payload["amount"]
+
+
+class PaymentStatsCombineFn(beam.CombineFn):
+    """Acumulador: (transaction_count, total_amount_pyg). Sin lista completa."""
+
+    def create_accumulator(self) -> tuple[int, int]:
+        return (0, 0)
+
+    def add_input(self, accumulator: tuple[int, int], amount: int) -> tuple[int, int]:
+        count, total = accumulator
+        return (count + 1, total + amount)
+
+    def merge_accumulators(self, accumulators) -> tuple[int, int]:
+        count = 0
+        total = 0
+        for acc_count, acc_total in accumulators:
+            count += acc_count
+            total += acc_total
+        return (count, total)
+
+    def extract_output(
+        self,
+        accumulator: tuple[int, int],
+    ) -> tuple[int, int]:
+        return accumulator
+
+
+def _format_window_boundary(ts: Timestamp) -> str:
+    """Timestamp Beam -> ISO 8601 UTC determinista, p.ej. '2026-01-01T12:00:00.000Z'."""
+    dt = ts.to_utc_datetime()
+    return f"{dt.strftime('%Y-%m-%dT%H:%M:%S')}.{dt.microsecond // 1000:03d}Z"
+
+
+class _ToAggregateContractFn(beam.DoFn):
+    """(merchant_id, (count, total)) + ventana -> dict con el AggregateContract."""
+
+    def process(self, element, window=beam.DoFn.WindowParam):
+        merchant_id, (transaction_count, total_amount_pyg) = element
+        window_start = _format_window_boundary(window.start)
+        window_end = _format_window_boundary(window.end)
+        yield {
+            "schema_version": 1,
+            "key": f"{merchant_id}|{window_start}",
+            "window_start": window_start,
+            "window_end": window_end,
+            "payload": {
+                "merchant_id": merchant_id,
+                "transaction_count": transaction_count,
+                "total_amount_pyg": total_amount_pyg,
+            },
+        }
+
+
+def apply_windowed_aggregation(
+    confirmed_events: beam.PCollection,
+) -> beam.PCollection:
+    """Agrega eventos CONFIRMED por merchant_id y ventana fija."""
+    windowed = confirmed_events | "WindowIntoFixed" >> beam.WindowInto(
+        FixedWindows(WINDOW_SIZE_SECONDS)
+    )
+    keyed = windowed | "ToMerchantAmountKV" >> beam.Map(_to_merchant_amount_kv)
+    combined = keyed | "CombineStatsPerKey" >> beam.CombinePerKey(PaymentStatsCombineFn())
+    return combined | "ToAggregateContract" >> beam.ParDo(_ToAggregateContractFn())
