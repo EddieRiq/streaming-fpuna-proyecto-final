@@ -14,11 +14,14 @@ from dataclasses import dataclass
 from datetime import datetime
 
 import apache_beam as beam
+from apache_beam.coders import BooleanCoder
 from apache_beam.pvalue import TaggedOutput
+from apache_beam.transforms.timeutil import TimeDomain
+from apache_beam.transforms.userstate import ReadModifyWriteStateSpec, TimerSpec, on_timer
 from apache_beam.transforms.window import FixedWindows, TimestampedValue
 from apache_beam.utils.timestamp import Timestamp
 
-from streaming_payments.common.config import WINDOW_SIZE_SECONDS
+from streaming_payments.common.config import DEDUP_HORIZON_SECONDS, WINDOW_SIZE_SECONDS
 
 VALID_STATUSES = ("CONFIRMED", "DECLINED", "PENDING")
 
@@ -205,6 +208,52 @@ def apply_parse_validate_filter(
     )
     confirmed = results.valid | "FilterConfirmed" >> beam.Filter(_is_confirmed)
     return confirmed, results.invalid
+
+
+# --- Deduplicación por event_id --------------------------------------------------
+
+
+def _to_event_id_kv(event: dict[str, object]) -> tuple[str, dict[str, object]]:
+    """Re-key temporal para deduplicar: la key de negocio/Kafka sigue siendo
+    merchant_id; este (event_id, event) es interno solo a esta etapa de Beam."""
+    return event["event_id"], event
+
+
+class DeduplicateByEventIdFn(beam.DoFn):
+    """Deduplica por event_id con estado acotado a DEDUP_HORIZON_SECONDS.
+    El horizonte se cuenta desde el timestamp de evento Beam de la primera
+    aparición aceptada: un duplicado no reinicia el timer de expiración."""
+
+    SEEN_STATE = ReadModifyWriteStateSpec("seen", BooleanCoder())
+    EXPIRY_TIMER = TimerSpec("expiry", TimeDomain.WATERMARK)
+
+    def process(
+        self,
+        element: tuple[str, dict[str, object]],
+        seen=beam.DoFn.StateParam(SEEN_STATE),
+        expiry_timer=beam.DoFn.TimerParam(EXPIRY_TIMER),
+        timestamp=beam.DoFn.TimestampParam,
+    ):
+        _event_id, event = element
+        if seen.read():
+            return
+
+        seen.write(True)
+        expiry_timer.set(timestamp + DEDUP_HORIZON_SECONDS)
+        yield event
+
+    @on_timer(EXPIRY_TIMER)
+    def expire(self, seen=beam.DoFn.StateParam(SEEN_STATE)):
+        seen.clear()
+
+
+def apply_deduplication(
+    confirmed_events: beam.PCollection,
+) -> beam.PCollection:
+    """confirmed_events -> dedup por event_id (estado acotado a
+    DEDUP_HORIZON_SECONDS) -> event dict, sin WindowInto."""
+    keyed = confirmed_events | "ToEventIdKV" >> beam.Map(_to_event_id_kv)
+    return keyed | "DeduplicateByEventId" >> beam.ParDo(DeduplicateByEventIdFn())
 
 
 # --- Agregación por ventana fija -------------------------------------------------

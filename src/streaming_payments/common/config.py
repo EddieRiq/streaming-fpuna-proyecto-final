@@ -4,6 +4,10 @@
 WINDOW_SIZE_SECONDS = 60
 ALLOWED_LATENESS_SECONDS = 120
 
+# Horizonte de deduplicación: el estado por event_id debe sobrevivir al menos
+# lo que una ventana pueda seguir afectada por allowed lateness.
+DEDUP_HORIZON_SECONDS = WINDOW_SIZE_SECONDS + ALLOWED_LATENESS_SECONDS
+
 # Claves de deduplicación y agregación
 DEDUP_KEY = "event_id"
 GROUP_BY_KEY = "merchant_id"

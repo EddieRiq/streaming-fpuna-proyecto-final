@@ -39,16 +39,21 @@ evidence/       # capturas, logs y salidas de demostración
 
 ## Estado actual
 
-El productor sintético, la primera capa del pipeline Beam y la agregación por
-ventana ya están implementados. Esto incluye: parseo y validación del contrato,
-asignación de tiempo de evento Beam basado en `event_time`, filtrado de pagos
-CONFIRMED, ventanas fijas de 60 segundos, y agregación incremental por
-`merchant_id` con `CombinePerKey`/`CombineFn` que produce `transaction_count`
-y `total_amount_pyg` por ventana, con una key de salida estable
+El productor sintético, la primera capa del pipeline Beam, la deduplicación
+acotada y la agregación por ventana ya están implementados. Esto incluye:
+parseo y validación del contrato, asignación de tiempo de evento Beam basado
+en `event_time`, filtrado de pagos CONFIRMED, deduplicación por `event_id`
+con estado Beam (`ReadModifyWriteStateSpec`) y un timer de event time
+(`TimeDomain.WATERMARK`) que expira ese estado tras un horizonte de
+`WINDOW_SIZE_SECONDS + ALLOWED_LATENESS_SECONDS`, ventanas fijas de 60
+segundos, y agregación incremental por `merchant_id` con
+`CombinePerKey`/`CombineFn` que produce `transaction_count` y
+`total_amount_pyg` por ventana, con una key de salida estable
 `merchant_id|window_start`.
 
-Permanecen pendientes: deduplicación, allowed lateness, triggers/panes,
-KafkaIO, DLQ Kafka real y el materializador idempotente.
+Permanecen pendientes: allowed lateness aplicado a `WindowInto`,
+triggers/panes, accumulation mode, KafkaIO, DLQ Kafka real y el
+materializador idempotente.
 
 ## Uso
 

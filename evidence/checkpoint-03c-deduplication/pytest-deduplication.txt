@@ -1,0 +1,17 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.13, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\Eduardo Riquelme\src\streaming-fpuna-proyecto-final\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\Eduardo Riquelme\src\streaming-fpuna-proyecto-final
+configfile: pyproject.toml
+collecting ... collected 8 items
+
+tests/test_deduplication.py::test_first_event_is_emitted PASSED          [ 12%]
+tests/test_deduplication.py::test_exact_duplicate_is_emitted_only_once PASSED [ 25%]
+tests/test_deduplication.py::test_different_event_ids_are_both_emitted PASSED [ 37%]
+tests/test_deduplication.py::test_same_event_id_does_not_reset_expiry_timer PASSED [ 50%]
+tests/test_deduplication.py::test_event_is_accepted_again_after_dedup_horizon PASSED [ 62%]
+tests/test_deduplication.py::test_deduplication_preserves_event_timestamp PASSED [ 75%]
+tests/test_deduplication.py::test_duplicate_contributes_once_to_windowed_aggregate PASSED [ 87%]
+tests/test_deduplication.py::test_two_distinct_events_same_merchant_both_contribute PASSED [100%]
+
+============================== 8 passed in 5.63s ==============================
