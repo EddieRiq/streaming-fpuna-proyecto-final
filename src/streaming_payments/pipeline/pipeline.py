@@ -227,11 +227,12 @@ class DeduplicateByEventIdFn(beam.DoFn):
     SEEN_STATE = ReadModifyWriteStateSpec("seen", BooleanCoder())
     EXPIRY_TIMER = TimerSpec("expiry", TimeDomain.WATERMARK)
 
+    # Beam inyecta state/timer mediante marcadores en los argumentos por defecto.
     def process(
         self,
         element: tuple[str, dict[str, object]],
-        seen=beam.DoFn.StateParam(SEEN_STATE),
-        expiry_timer=beam.DoFn.TimerParam(EXPIRY_TIMER),
+        seen=beam.DoFn.StateParam(SEEN_STATE),  # noqa: B008
+        expiry_timer=beam.DoFn.TimerParam(EXPIRY_TIMER),  # noqa: B008
         timestamp=beam.DoFn.TimestampParam,
     ):
         _event_id, event = element
@@ -243,7 +244,10 @@ class DeduplicateByEventIdFn(beam.DoFn):
         yield event
 
     @on_timer(EXPIRY_TIMER)
-    def expire(self, seen=beam.DoFn.StateParam(SEEN_STATE)):
+    def expire(
+        self,
+        seen=beam.DoFn.StateParam(SEEN_STATE),  # noqa: B008
+    ):
         seen.clear()
 
 

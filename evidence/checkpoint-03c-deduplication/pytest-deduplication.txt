@@ -14,4 +14,4 @@ tests/test_deduplication.py::test_deduplication_preserves_event_timestamp PASSED
 tests/test_deduplication.py::test_duplicate_contributes_once_to_windowed_aggregate PASSED [ 87%]
 tests/test_deduplication.py::test_two_distinct_events_same_merchant_both_contribute PASSED [100%]
 
-============================== 8 passed in 5.63s ==============================
+============================== 8 passed in 5.01s ==============================
