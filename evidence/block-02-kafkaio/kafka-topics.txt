@@ -1,0 +1,8 @@
+$ docker compose ps
+NAME      IMAGE                         COMMAND                  SERVICE   CREATED          STATUS                    PORTS
+kafka     confluentinc/cp-kafka:7.6.1   "/etc/confluent/dock…"   kafka     18 seconds ago   Up 17 seconds (healthy)   0.0.0.0:9092->9092/tcp, [::]:9092->9092/tcp
+
+$ docker exec kafka kafka-topics --bootstrap-server localhost:29092 --list
+payments.aggregates.v1
+payments.events.dlq.v1
+payments.events.v1

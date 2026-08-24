@@ -1,0 +1,45 @@
+Resumen del smoke KafkaIO real -- Bloque 2 de 5
+================================================
+
+- KafkaIO real (ReadFromKafka/WriteToKafka, entrypoint kafka_pipeline.py,
+  sin scripts scratch) leyó de payments.events.v1 y escribió en
+  payments.aggregates.v1 y payments.events.dlq.v1 correctamente.
+- El pipeline terminó con exit code 0 (sin excepción, ver pipeline-startup.txt).
+- El duplicado exacto (mismo event_id que otro evento del escenario demo) no
+  infló ningún agregado: los 3 agregados publicados suman 3+1+2 = 6
+  eventos CONFIRMED únicos, que coincide exactamente con los eventos
+  CONFIRMED distintos del escenario (el duplicado no se contó una segunda vez).
+- El evento inválido (sin event_id) llegó a payments.events.dlq.v1, con
+  errors como lista, raw_data conservado, y key vacía (b"") porque no había
+  event_id disponible.
+- El modo --max-num-records 10 se usa únicamente para este smoke local,
+  porque en este entorno (DirectRunner + KafkaIO cross-language sobre Java)
+  WriteToKafka no materializa sus escrituras mientras la fuente permanece
+  unbounded -- es una limitación observada del entorno local, no del diseño
+  del pipeline.
+- Sin --max-num-records, el pipeline productivo sigue siendo unbounded por
+  defecto (ver kafka_pipeline.py: build_pipeline(..., max_num_records=None)).
+- El aggregate correspondiente a la ventana del evento "late" del escenario
+  demo (E8), producido en este smoke bounded, NO se usa como evidencia de
+  que allowed lateness/descarte funciona: el modo bounded no reproduce con
+  fidelidad el avance incremental de un watermark ProcessingTime real (ver
+  análisis dedicado registrado en la conversación del Bloque 2).
+- La política exacta de watermark/allowed lateness/triggers/panes está
+  validada en tests/test_late_events.py usando TestStream con control
+  explícito de watermark: pane on-time, pane tardío dentro de allowed
+  lateness, key estable compartida entre panes, y descarte de eventos más
+  allá de allowed lateness.
+- No se afirma entrega exactly-once: la garantía es at-least-once desde
+  Kafka, acotada por deduplicación de event_id dentro de
+  DEDUP_HORIZON_SECONDS.
+
+Archivos de este directorio
+----------------------------
+ruff.txt                - uv run ruff check src tests
+pytest.txt               - uv run pytest (87 tests)
+kafka-topics.txt          - docker compose ps + lista de tópicos
+pipeline-startup.txt       - detección de Java 17, arranque del expansion
+                            service, y verificación de finalización limpia
+producer-demo.txt          - publicación real del escenario demo (--start-now)
+aggregates-consumed.txt    - contenido real de payments.aggregates.v1
+dlq-consumed.txt           - contenido real de payments.events.dlq.v1

@@ -1,0 +1,4 @@
+$ kafka-console-consumer --topic payments.aggregates.v1 --from-beginning
+merchant-003|2026-08-24T22:26:00.000Z || {"key": "merchant-003|2026-08-24T22:26:00.000Z", "payload": {"merchant_id": "merchant-003", "total_amount_pyg": 802668, "transaction_count": 3}, "schema_version": 1, "window_end": "2026-08-24T22:27:00.000Z", "window_start": "2026-08-24T22:26:00.000Z"}
+merchant-002|2026-08-24T22:23:00.000Z || {"key": "merchant-002|2026-08-24T22:23:00.000Z", "payload": {"merchant_id": "merchant-002", "total_amount_pyg": 240682, "transaction_count": 1}, "schema_version": 1, "window_end": "2026-08-24T22:24:00.000Z", "window_start": "2026-08-24T22:23:00.000Z"}
+merchant-002|2026-08-24T22:26:00.000Z || {"key": "merchant-002|2026-08-24T22:26:00.000Z", "payload": {"merchant_id": "merchant-002", "total_amount_pyg": 484422, "transaction_count": 2}, "schema_version": 1, "window_end": "2026-08-24T22:27:00.000Z", "window_start": "2026-08-24T22:26:00.000Z"}

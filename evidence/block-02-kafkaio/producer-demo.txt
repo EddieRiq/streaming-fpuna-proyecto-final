@@ -1,0 +1,11 @@
+$ uv run python -m streaming_payments.producer.producer --scenario demo --start-now --bootstrap-servers localhost:9092
+[normal] event_id=c6737b8b-2a6a-4b5f-bb5d-75b895f628f2
+[normal] event_id=643cb56d-4ec1-4fc6-bee2-9f53ebf644bb
+[normal] event_id=6cecc258-1bfa-430d-9d68-5155e98cd7d9
+[normal] event_id=e369ab3d-591d-4569-ab0a-0d83b2ff5134
+[normal] event_id=d51f25e6-0490-492a-a9eb-72624f93de30
+[out_of_order] event_id=da1298c4-cbb4-42ae-abd4-e7abf522dfdc
+[duplicate] event_id=6cecc258-1bfa-430d-9d68-5155e98cd7d9
+[late] event_id=113a972f-8c39-46bb-b373-85edcdd25aa1
+[invalid] event_id=<missing>
+[normal] event_id=1ac66dea-3270-4980-b262-c798a28f38bd

@@ -19,3 +19,6 @@ TOPIC_EVENTS_DLQ = "payments.events.dlq.v1"
 
 # Conexión Kafka (valores por defecto para entorno local via docker-compose)
 KAFKA_BOOTSTRAP_SERVERS = "localhost:9092"
+
+# Consumer group del pipeline Beam real (KafkaIO)
+KAFKA_CONSUMER_GROUP_ID = "streaming-payments-pipeline"

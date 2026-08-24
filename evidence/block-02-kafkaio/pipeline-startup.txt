@@ -1,0 +1,25 @@
+$ java -version (JDK detectado dinámicamente vía JAVA_HOME de máquina, sin hardcodear ruta en el repo)
+JAVA_HOME=C:\Program Files\Microsoft\jdk-17.0.20.101-hotspot\
+openjdk version "17.0.20.1" 2026-08-18 LTS
+OpenJDK Runtime Environment Microsoft-14940689 (build 17.0.20.1+1-LTS)
+OpenJDK 64-Bit Server VM Microsoft-14940689 (build 17.0.20.1+1-LTS, mixed mode, sharing)
+
+$ uv run python -m streaming_payments.pipeline.kafka_pipeline --bootstrap-servers localhost:9092 --input-topic payments.events.v1 --aggregates-topic payments.aggregates.v1 --dlq-topic payments.events.dlq.v1 --max-num-records 10
+WARNING:apache_beam.utils.subprocess_server:Really starting service at localhost:55300 with cmd: ['C:\\Program Files\\Microsoft\\jdk-17.0.20.101-hotspot\\bin\\java', '-jar', 'C:\\Users\\Eduardo Riquelme/.apache_beam/cache/jars\\beam-sdks-java-io-expansion-service-2.75.0.jar', '55300', '--filesToStage=C:\\Users\\Eduardo Riquelme/.apache_beam/cache/jars\\beam-sdks-java-io-expansion-service-2.75.0.jar', '--alsoStartLoopbackWorker']
+ERROR:root:severity: ERROR
+timestamp {
+  seconds: 1787610399
+  nanos: 898000000
+}
+message: "*~*~*~ Previous channel ManagedChannelImpl{logId=9, target=localhost:55342} was garbage collected without being shut down! ~*~*~*\r\n    Make sure to call shutdown()/shutdownNow()"
+trace: "java.lang.RuntimeException: ManagedChannel allocation site\r\n\tat org.apache.beam.vendor.grpc.v1p69p0.io.grpc.internal.ManagedChannelOrphanWrapper$ManagedChannelReference.<init>(ManagedChannelOrphanWrapper.java:102)\r\n\tat org.apache.beam.vendor.grpc.v1p69p0.io.grpc.internal.ManagedChannelOrphanWrapper.<init>(ManagedChannelOrphanWrapper.java:60)\r\n\tat org.apache.beam.vendor.grpc.v1p69p0.io.grpc.internal.ManagedChannelOrphanWrapper.<init>(ManagedChannelOrphanWrapper.java:51)\r\n\tat org.apache.beam.vendor.grpc.v1p69p0.io.grpc.internal.ManagedChannelImplBuilder.build(ManagedChannelImplBuilder.java:710)\r\n\tat org.apache.beam.vendor.grpc.v1p69p0.io.grpc.ForwardingChannelBuilder2.build(ForwardingChannelBuilder2.java:272)\r\n\tat org.apache.beam.sdk.fn.channel.ManagedChannelFactory.forDescriptor(ManagedChannelFactory.java:101)\r\n\tat org.apache.beam.fn.harness.ExternalWorkerService.startWorker(ExternalWorkerService.java:83)\r\n\tat org.apache.beam.model.fnexecution.v1.BeamFnExternalWorkerPoolGrpc$MethodHandlers.invoke(BeamFnExternalWorkerPoolGrpc.java:296)\r\n\tat org.apache.beam.vendor.grpc.v1p69p0.io.grpc.stub.ServerCalls$UnaryServerCallHandler$UnaryServerCallListener.onHalfClose(ServerCalls.java:182)\r\n\tat org.apache.beam.vendor.grpc.v1p69p0.io.grpc.internal.ServerCallImpl$ServerStreamListenerImpl.halfClosed(ServerCallImpl.java:356)\r\n\tat org.apache.beam.vendor.grpc.v1p69p0.io.grpc.internal.ServerImpl$JumpToApplicationThreadServerStreamListener$1HalfClosed.runInContext(ServerImpl.java:861)\r\n\tat org.apache.beam.vendor.grpc.v1p69p0.io.grpc.internal.ContextRunnable.run(ContextRunnable.java:37)\r\n\tat org.apache.beam.vendor.grpc.v1p69p0.io.grpc.internal.SerializingExecutor.run(SerializingExecutor.java:133)\r\n\tat java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)\r\n\tat java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)\r\n\tat java.base/java.lang.Thread.run(Thread.java:840)\r\n"
+instruction_id: "bundle_1"
+log_location: "org.apache.beam.vendor.grpc.v1p69p0.io.grpc.internal.ManagedChannelOrphanWrapper"
+thread: "32"
+
+WARNING:apache_beam.utils.subprocess_server:Really destroying service at localhost:55300 with cmd: ['C:\\Program Files\\Microsoft\\jdk-17.0.20.101-hotspot\\bin\\java', '-jar', 'C:\\Users\\Eduardo Riquelme/.apache_beam/cache/jars\\beam-sdks-java-io-expansion-service-2.75.0.jar', '55300', '--filesToStage=C:\\Users\\Eduardo Riquelme/.apache_beam/cache/jars\\beam-sdks-java-io-expansion-service-2.75.0.jar', '--alsoStartLoopbackWorker']
+
+$ (verificación post-ejecución)
+Procesos java restantes:
+(ninguno = el proceso Java del pipeline finalizó solo)
+Sin traceback tras 'Really destroying service': el proceso Python terminó con exit code 0.

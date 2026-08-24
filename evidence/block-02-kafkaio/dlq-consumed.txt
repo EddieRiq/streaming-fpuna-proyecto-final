@@ -1,0 +1,2 @@
+$ kafka-console-consumer --topic payments.events.dlq.v1 --from-beginning
+ || {"errors": ["falta 'event_id'"], "raw_data": {"event_time": "2026-08-24T22:26:50.000Z", "key": "merchant-003", "payload": {"account_id": "account-009", "amount": 325362, "currency": "PYG", "merchant_id": "merchant-003", "status": "CONFIRMED", "transaction_id": "txn-93c9c8fef8436035"}, "schema_version": 1}}

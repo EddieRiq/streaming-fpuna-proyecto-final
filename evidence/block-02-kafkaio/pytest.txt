@@ -1,0 +1,18 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.13, pytest-8.4.2, pluggy-1.6.0
+rootdir: C:\Users\Eduardo Riquelme\src\streaming-fpuna-proyecto-final
+configfile: pyproject.toml
+testpaths: tests
+collected 87 items
+
+tests\test_aggregation.py ..........                                     [ 11%]
+tests\test_deduplication.py ........                                     [ 20%]
+tests\test_kafka_pipeline.py ..............                              [ 36%]
+tests\test_late_events.py ....                                           [ 41%]
+tests\test_out_of_order.py ..                                            [ 43%]
+tests\test_pipeline.py ......                                            [ 50%]
+tests\test_producer.py ........................                          [ 78%]
+tests\test_validation.py ...................                             [100%]
+
+============================= 87 passed in 13.45s =============================
+Really destroying service at localhost:55248 with cmd: ('C:\\Users\\Eduardo Riquelme/.apache_beam/cache/prism/bin\\apache_beam-v2.75.0-prism-windows-amd64', '--job_port', '55248', '--log_level', 'info', '--log_kind', 'json', '--serve_http=false')
