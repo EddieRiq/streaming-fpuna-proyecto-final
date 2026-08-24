@@ -40,20 +40,24 @@ evidence/       # capturas, logs y salidas de demostración
 ## Estado actual
 
 El productor sintético, la primera capa del pipeline Beam, la deduplicación
-acotada y la agregación por ventana ya están implementados. Esto incluye:
-parseo y validación del contrato, asignación de tiempo de evento Beam basado
-en `event_time`, filtrado de pagos CONFIRMED, deduplicación por `event_id`
-con estado Beam (`ReadModifyWriteStateSpec`) y un timer de event time
-(`TimeDomain.WATERMARK`) que expira ese estado tras un horizonte de
-`WINDOW_SIZE_SECONDS + ALLOWED_LATENESS_SECONDS`, ventanas fijas de 60
-segundos, y agregación incremental por `merchant_id` con
-`CombinePerKey`/`CombineFn` que produce `transaction_count` y
-`total_amount_pyg` por ventana, con una key de salida estable
-`merchant_id|window_start`.
+acotada y la política temporal completa de agregación ya están implementados
+y probados. Esto incluye: parseo y validación del contrato, asignación de
+tiempo de evento Beam basado en `event_time`, filtrado de pagos CONFIRMED,
+deduplicación por `event_id` con estado Beam (`ReadModifyWriteStateSpec`) y
+un timer de event time (`TimeDomain.WATERMARK`) que expira ese estado tras un
+horizonte de `WINDOW_SIZE_SECONDS + ALLOWED_LATENESS_SECONDS`, ventanas fijas
+de 60 segundos con allowed lateness de 120 segundos, un trigger
+`AfterWatermark` con late firing y modo de acumulación `ACCUMULATING` (pane
+on-time, pane tardío acumulativo, y descarte de eventos que superan el
+allowed lateness), tolerancia a eventos fuera de orden, y agregación
+incremental por `merchant_id` con `CombinePerKey`/`CombineFn` que produce
+`transaction_count` y `total_amount_pyg` por ventana, con una key de salida
+estable `merchant_id|window_start` compartida entre el pane on-time y los
+panes tardíos.
 
-Permanecen pendientes: allowed lateness aplicado a `WindowInto`,
-triggers/panes, accumulation mode, KafkaIO, DLQ Kafka real y el
-materializador idempotente.
+Permanecen pendientes: KafkaIO real y DLQ Kafka, el materializador
+idempotente, la prueba E2E con sus evidencias, y la documentación y entrega
+final.
 
 ## Uso
 

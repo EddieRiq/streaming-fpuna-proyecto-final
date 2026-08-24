@@ -5,6 +5,7 @@ Usan TestPipeline (DirectRunner), sin KafkaIO y sin broker. TestStream se usa
 """
 
 import apache_beam as beam
+from apache_beam.options.pipeline_options import PipelineOptions, StandardOptions
 from apache_beam.testing.test_pipeline import TestPipeline as BeamTestPipeline
 from apache_beam.testing.test_stream import TestStream as BeamTestStream
 from apache_beam.testing.util import assert_that, equal_to
@@ -56,6 +57,12 @@ def _confirmed_pcoll(p, events: list[dict[str, object]]) -> beam.PCollection:
         | "AddEventTimeTimestamp"
         >> beam.Map(lambda e: TimestampedValue(e, event_time_to_beam_timestamp(e)))
     )
+
+
+def _streaming_options() -> PipelineOptions:
+    options = PipelineOptions()
+    options.view_as(StandardOptions).streaming = True
+    return options
 
 
 # --- casos básicos ----------------------------------------------------------------
@@ -169,8 +176,12 @@ def test_duplicate_contributes_once_to_windowed_aggregate():
         assert aggregate["payload"]["transaction_count"] == 1
         assert aggregate["payload"]["total_amount_pyg"] == 25_000
 
-    with BeamTestPipeline() as p:
-        raw_events = p | "Create" >> beam.Create(raws)
+    test_stream = (
+        BeamTestStream().advance_watermark_to(0).add_elements(raws).advance_watermark_to_infinity()
+    )
+
+    with BeamTestPipeline(options=_streaming_options()) as p:
+        raw_events = p | test_stream
         confirmed, _invalid = apply_parse_validate_filter(raw_events)
         deduped = apply_deduplication(confirmed)
         aggregates = apply_windowed_aggregation(deduped)
@@ -193,8 +204,12 @@ def test_two_distinct_events_same_merchant_both_contribute():
         assert aggregate["payload"]["transaction_count"] == 2
         assert aggregate["payload"]["total_amount_pyg"] == 35_000
 
-    with BeamTestPipeline() as p:
-        raw_events = p | "Create" >> beam.Create(raws)
+    test_stream = (
+        BeamTestStream().advance_watermark_to(0).add_elements(raws).advance_watermark_to_infinity()
+    )
+
+    with BeamTestPipeline(options=_streaming_options()) as p:
+        raw_events = p | test_stream
         confirmed, _invalid = apply_parse_validate_filter(raw_events)
         deduped = apply_deduplication(confirmed)
         aggregates = apply_windowed_aggregation(deduped)

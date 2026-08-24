@@ -17,11 +17,16 @@ import apache_beam as beam
 from apache_beam.coders import BooleanCoder
 from apache_beam.pvalue import TaggedOutput
 from apache_beam.transforms.timeutil import TimeDomain
+from apache_beam.transforms.trigger import AccumulationMode, AfterCount, AfterWatermark
 from apache_beam.transforms.userstate import ReadModifyWriteStateSpec, TimerSpec, on_timer
 from apache_beam.transforms.window import FixedWindows, TimestampedValue
 from apache_beam.utils.timestamp import Timestamp
 
-from streaming_payments.common.config import DEDUP_HORIZON_SECONDS, WINDOW_SIZE_SECONDS
+from streaming_payments.common.config import (
+    ALLOWED_LATENESS_SECONDS,
+    DEDUP_HORIZON_SECONDS,
+    WINDOW_SIZE_SECONDS,
+)
 
 VALID_STATUSES = ("CONFIRMED", "DECLINED", "PENDING")
 
@@ -323,9 +328,14 @@ class _ToAggregateContractFn(beam.DoFn):
 def apply_windowed_aggregation(
     confirmed_events: beam.PCollection,
 ) -> beam.PCollection:
-    """Agrega eventos CONFIRMED por merchant_id y ventana fija."""
+    """Agrega eventos CONFIRMED por merchant_id y ventana fija, con pane on-time,
+    panes tardíos acumulativos dentro de ALLOWED_LATENESS_SECONDS, y descarte de
+    elementos más allá de ese horizonte."""
     windowed = confirmed_events | "WindowIntoFixed" >> beam.WindowInto(
-        FixedWindows(WINDOW_SIZE_SECONDS)
+        FixedWindows(WINDOW_SIZE_SECONDS),
+        trigger=AfterWatermark(late=AfterCount(1)),
+        accumulation_mode=AccumulationMode.ACCUMULATING,
+        allowed_lateness=ALLOWED_LATENESS_SECONDS,
     )
     keyed = windowed | "ToMerchantAmountKV" >> beam.Map(_to_merchant_amount_kv)
     combined = keyed | "CombineStatsPerKey" >> beam.CombinePerKey(PaymentStatsCombineFn())

@@ -1,11 +1,16 @@
 """Tests de agregación por ventana fija (Checkpoint 3B).
 
-Usan TestPipeline (DirectRunner), sin KafkaIO y sin broker. No prueban
-duplicados ni eventos tardíos -- eso queda para el checkpoint con TestStream.
+Usan TestPipeline (DirectRunner) con TestStream + streaming=True: es la única
+combinación verificada en Beam 2.75.0 donde AfterWatermark(late=...) +
+ACCUMULATING fusiona correctamente varios eventos del mismo merchant_id+ventana.
+No prueban duplicados ni eventos tardíos -- eso queda para
+test_deduplication.py y test_late_events.py.
 """
 
 import apache_beam as beam
+from apache_beam.options.pipeline_options import PipelineOptions, StandardOptions
 from apache_beam.testing.test_pipeline import TestPipeline as BeamTestPipeline
+from apache_beam.testing.test_stream import TestStream as BeamTestStream
 from apache_beam.testing.util import assert_that, equal_to
 from apache_beam.transforms.window import TimestampedValue
 
@@ -75,13 +80,34 @@ def _aggregate(
 
 def _confirmed_pcoll(p, events: list[dict[str, object]]) -> beam.PCollection:
     """PCollection de eventos ya confirmados con timestamp Beam = event_time,
-    tal como llegarían a apply_windowed_aggregation en el pipeline real."""
-    return (
-        p
-        | "Create" >> beam.Create(events)
-        | "AddEventTimeTimestamp"
-        >> beam.Map(lambda e: TimestampedValue(e, event_time_to_beam_timestamp(e)))
+    alimentada vía TestStream + streaming=True: es la única combinación
+    verificada en Beam 2.75.0 donde AfterWatermark(late=...) + ACCUMULATING
+    fusiona correctamente varios eventos del mismo merchant_id+ventana."""
+    timestamps = [event_time_to_beam_timestamp(event) for event in events]
+    test_stream = BeamTestStream().advance_watermark_to(min(timestamps))
+    for event, ts in zip(events, timestamps, strict=True):
+        test_stream = test_stream.add_elements([TimestampedValue(event, ts)])
+    test_stream = test_stream.advance_watermark_to_infinity()
+    return p | test_stream
+
+
+def _raw_events_pcoll(p, raws: list[bytes]) -> beam.PCollection:
+    """PCollection de bytes crudos alimentada vía TestStream + streaming=True.
+    apply_parse_validate_filter reasigna el timestamp Beam real desde
+    event_time dentro del DoFn, así que el watermark de entrada no importa."""
+    test_stream = (
+        BeamTestStream().advance_watermark_to(0).add_elements(raws).advance_watermark_to_infinity()
     )
+    return p | test_stream
+
+
+def _streaming_options() -> PipelineOptions:
+    """streaming=True: única combinación verificada en Beam 2.75.0 donde
+    AfterWatermark(late=...) + ACCUMULATING fusiona correctamente varios
+    eventos del mismo merchant_id+ventana (beam.Create en modo batch no lo hace)."""
+    options = PipelineOptions()
+    options.view_as(StandardOptions).streaming = True
+    return options
 
 
 # --- PaymentStatsCombineFn: unitario, sin pipeline -------------------------------
@@ -105,10 +131,12 @@ def test_merge_accumulators_accepts_single_pass_iterable():
 
 
 def test_same_merchant_same_window_aggregates_count_and_total():
-    events = [
-        _confirmed_event(event_id="evt-1", event_time="2026-01-01T12:00:00.000Z", amount=10_000),
-        _confirmed_event(event_id="evt-2", event_time="2026-01-01T12:00:30.000Z", amount=25_000),
-    ]
+    event1 = _confirmed_event(
+        event_id="evt-1", event_time="2026-01-01T12:00:00.000Z", amount=10_000
+    )
+    event2 = _confirmed_event(
+        event_id="evt-2", event_time="2026-01-01T12:00:30.000Z", amount=25_000
+    )
     expected = [
         _aggregate(
             "merchant-001",
@@ -119,8 +147,8 @@ def test_same_merchant_same_window_aggregates_count_and_total():
         )
     ]
 
-    with BeamTestPipeline() as p:
-        confirmed = _confirmed_pcoll(p, events)
+    with BeamTestPipeline(options=_streaming_options()) as p:
+        confirmed = _confirmed_pcoll(p, [event1, event2])
         aggregates = apply_windowed_aggregation(confirmed)
         assert_that(aggregates, equal_to(expected))
 
@@ -157,7 +185,7 @@ def test_different_merchants_same_window_produce_separate_aggregates():
         ),
     ]
 
-    with BeamTestPipeline() as p:
+    with BeamTestPipeline(options=_streaming_options()) as p:
         confirmed = _confirmed_pcoll(p, events)
         aggregates = apply_windowed_aggregation(confirmed)
         assert_that(aggregates, equal_to(expected))
@@ -185,7 +213,7 @@ def test_same_merchant_different_windows_produce_two_aggregates():
         ),
     ]
 
-    with BeamTestPipeline() as p:
+    with BeamTestPipeline(options=_streaming_options()) as p:
         confirmed = _confirmed_pcoll(p, events)
         aggregates = apply_windowed_aggregation(confirmed)
         assert_that(aggregates, equal_to(expected))
@@ -205,7 +233,7 @@ def test_event_exactly_on_window_boundary_belongs_to_next_window():
         )
     ]
 
-    with BeamTestPipeline() as p:
+    with BeamTestPipeline(options=_streaming_options()) as p:
         confirmed = _confirmed_pcoll(p, events)
         aggregates = apply_windowed_aggregation(confirmed)
         assert_that(aggregates, equal_to(expected))
@@ -226,7 +254,7 @@ def test_window_start_and_window_end_are_correct_iso8601():
         assert aggregate["window_start"] == "2026-01-01T12:00:00.000Z"
         assert aggregate["window_end"] == "2026-01-01T12:01:00.000Z"
 
-    with BeamTestPipeline() as p:
+    with BeamTestPipeline(options=_streaming_options()) as p:
         confirmed = _confirmed_pcoll(p, events)
         aggregates = apply_windowed_aggregation(confirmed)
         assert_that(aggregates, _check)
@@ -247,19 +275,17 @@ def test_aggregate_key_is_merchant_id_pipe_window_start():
         assert len(actual) == 1
         assert actual[0]["key"] == "merchant-042|2026-01-01T12:00:00.000Z"
 
-    with BeamTestPipeline() as p:
+    with BeamTestPipeline(options=_streaming_options()) as p:
         confirmed = _confirmed_pcoll(p, events)
         aggregates = apply_windowed_aggregation(confirmed)
         assert_that(aggregates, _check)
 
 
 def test_total_amount_pyg_sums_exact_integers():
-    events = [
-        _confirmed_event(
-            event_id="evt-1", event_time="2026-01-01T12:00:00.000Z", amount=999_999_999
-        ),
-        _confirmed_event(event_id="evt-2", event_time="2026-01-01T12:00:01.000Z", amount=1),
-    ]
+    event1 = _confirmed_event(
+        event_id="evt-1", event_time="2026-01-01T12:00:00.000Z", amount=999_999_999
+    )
+    event2 = _confirmed_event(event_id="evt-2", event_time="2026-01-01T12:00:01.000Z", amount=1)
     expected = [
         _aggregate(
             "merchant-001",
@@ -270,8 +296,8 @@ def test_total_amount_pyg_sums_exact_integers():
         )
     ]
 
-    with BeamTestPipeline() as p:
-        confirmed = _confirmed_pcoll(p, events)
+    with BeamTestPipeline(options=_streaming_options()) as p:
+        confirmed = _confirmed_pcoll(p, [event1, event2])
         aggregates = apply_windowed_aggregation(confirmed)
         assert_that(aggregates, equal_to(expected))
 
@@ -292,8 +318,8 @@ def test_integration_raw_bytes_to_aggregate():
         )
     ]
 
-    with BeamTestPipeline() as p:
-        raw_events = p | "Create" >> beam.Create([raw])
+    with BeamTestPipeline(options=_streaming_options()) as p:
+        raw_events = _raw_events_pcoll(p, [raw])
         confirmed, _invalid = apply_parse_validate_filter(raw_events)
         aggregates = apply_windowed_aggregation(confirmed)
         assert_that(aggregates, equal_to(expected))
@@ -316,8 +342,8 @@ def test_declined_and_pending_do_not_contribute_to_aggregates():
         )
     ]
 
-    with BeamTestPipeline() as p:
-        raw_events = p | "Create" >> beam.Create(raws)
+    with BeamTestPipeline(options=_streaming_options()) as p:
+        raw_events = _raw_events_pcoll(p, raws)
         confirmed, _invalid = apply_parse_validate_filter(raw_events)
         aggregates = apply_windowed_aggregation(confirmed)
         assert_that(aggregates, equal_to(expected))
