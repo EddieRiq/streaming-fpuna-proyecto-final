@@ -1,0 +1,103 @@
+============================================================
+SMOKE BLOQUE 3 - Kafka aggregates -> materializer -> SQLite
+============================================================
+
+Smoke ya ejecutado. Este archivo documenta esa corrida.
+No se volvieron a publicar ni a consumir mensajes para generarlo.
+
+------------------------------------------------------------
+ENTORNO KAFKA LIMPIO
+------------------------------------------------------------
+
+docker compose down -v --remove-orphans    exit 0
+docker compose up -d                       exit 0  (contenedor kafka Healthy)
+kafka-init                                 exit 0  (3 topics creados)
+
+------------------------------------------------------------
+TOPICS Y PARTICIONES
+------------------------------------------------------------
+
+payments.events.v1        PartitionCount: 3   ReplicationFactor: 1
+payments.aggregates.v1    PartitionCount: 3   ReplicationFactor: 1
+payments.events.dlq.v1    PartitionCount: 1   ReplicationFactor: 1
+
+(detalle completo en kafka-topics.txt)
+
+------------------------------------------------------------
+INPUTS PUBLICADOS EN payments.aggregates.v1
+------------------------------------------------------------
+
+Publicados con kafka-python (KafkaProducer).
+Kafka key = aggregate["key"].encode("utf-8") en los tres mensajes.
+Campos comunes de cada aggregate:
+    schema_version = 1
+    window_start   = "2026-01-01T12:00:00.000Z"
+    window_end     = "2026-01-01T12:01:00.000Z"
+
+Input 1:
+    key               = merchant-001|2026-01-01T12:00:00.000Z
+    transaction_count = 1
+    total_amount_pyg  = 10000
+    partition         = 0
+    offset            = 0
+
+Input 2:
+    key               = merchant-001|2026-01-01T12:00:00.000Z
+    transaction_count = 2
+    total_amount_pyg  = 35000
+    partition         = 0
+    offset            = 1
+
+Input 3:
+    key               = merchant-002|2026-01-01T12:00:00.000Z
+    transaction_count = 1
+    total_amount_pyg  = 5000
+    partition         = 0
+    offset            = 2
+
+Producer: 3 sends + flush confirmados.
+Los 3 mensajes cayeron en la particion 0. Input 1 e Input 2 comparten la
+misma key -> misma particion -> orden garantizado (offset 0 antes que
+offset 1): el segundo pane de merchant-001 se aplica despues del primero.
+
+------------------------------------------------------------
+COMANDO DEL MATERIALIZER
+------------------------------------------------------------
+
+Previo a ejecutar: se elimino data/materialized.db (no existia; en data/
+solo estaba .gitkeep).
+
+uv run python -m streaming_payments.materializer.materializer \
+  --bootstrap-servers localhost:9092 \
+  --topic payments.aggregates.v1 \
+  --db-path data/materialized.db \
+  --max-messages 3
+
+Resultado:
+    exit code 0
+    finalizacion natural: alcanzo --max-messages 3, sin senal externa
+    sin salida en stdout/stderr (el modulo solo imprime ante error o
+        KeyboardInterrupt)
+    no quedo proceso corriendo
+
+------------------------------------------------------------
+CONSUMER GROUP (re-consultado, sin volver a consumir)
+------------------------------------------------------------
+
+docker exec kafka kafka-consumer-groups --bootstrap-server localhost:29092 \
+  --describe --group streaming-payments-materializer
+
+Consumer group 'streaming-payments-materializer' has no active members.
+
+GROUP                            TOPIC                   PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG
+streaming-payments-materializer  payments.aggregates.v1  0          3               3               0
+
+    group id        = streaming-payments-materializer
+    CURRENT-OFFSET  = 3
+    LOG-END-OFFSET  = 3
+    LAG             = 0
+    sin active members al finalizar
+
+Los 3 registros fueron consumidos y su offset committeado (offset+1 del
+ultimo registro). CURRENT-OFFSET = LOG-END-OFFSET = 3, LAG = 0: no quedaron
+mensajes pendientes.

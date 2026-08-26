@@ -1,0 +1,21 @@
+$ SELECT ordenado por aggregate_key
+
+total filas: 2
+
+aggregate_key        = 'merchant-001|2026-01-01T12:00:00.000Z'
+merchant_id          = 'merchant-001'
+window_start         = '2026-01-01T12:00:00.000Z'
+window_end           = '2026-01-01T12:01:00.000Z'
+transaction_count    = 2
+total_amount_pyg     = 35000
+
+aggregate_key        = 'merchant-002|2026-01-01T12:00:00.000Z'
+merchant_id          = 'merchant-002'
+window_start         = '2026-01-01T12:00:00.000Z'
+window_end           = '2026-01-01T12:01:00.000Z'
+transaction_count    = 1
+total_amount_pyg     = 5000
+
+--- typeof() por columna via SQLite (misma fila, ordenado) ---
+merchant-001|2026-01-01T12:00:00.000Z: typeof(transaction_count)=integer  typeof(total_amount_pyg)=integer
+merchant-002|2026-01-01T12:00:00.000Z: typeof(transaction_count)=integer  typeof(total_amount_pyg)=integer

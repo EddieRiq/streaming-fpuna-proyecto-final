@@ -22,3 +22,6 @@ KAFKA_BOOTSTRAP_SERVERS = "localhost:9092"
 
 # Consumer group del pipeline Beam real (KafkaIO)
 KAFKA_CONSUMER_GROUP_ID = "streaming-payments-pipeline"
+
+# Consumer group del materializador (kafka-python, sin Beam)
+KAFKA_MATERIALIZER_GROUP_ID = "streaming-payments-materializer"

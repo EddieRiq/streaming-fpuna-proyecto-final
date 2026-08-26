@@ -17,6 +17,11 @@ dist/
 # Environment
 .env
 
+# Materializer SQLite (generado localmente, no versionar)
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
 # OS
 .DS_Store
 Thumbs.db

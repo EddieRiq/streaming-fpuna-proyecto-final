@@ -1,0 +1,36 @@
+$ uv run pytest --collect-only -q tests/test_materializer.py
+tests/test_materializer.py::test_parse_aggregate_message_accepts_valid
+tests/test_materializer.py::test_parse_aggregate_message_rejects_invalid_utf8
+tests/test_materializer.py::test_parse_aggregate_message_rejects_invalid_json
+tests/test_materializer.py::test_parse_aggregate_message_rejects_wrong_schema_version
+tests/test_materializer.py::test_parse_aggregate_message_rejects_inconsistent_key
+tests/test_materializer.py::test_parse_aggregate_message_rejects_transaction_count_bool
+tests/test_materializer.py::test_parse_aggregate_message_rejects_total_amount_pyg_bool
+tests/test_materializer.py::test_validate_kafka_key_accepts_matching_key
+tests/test_materializer.py::test_validate_kafka_key_rejects_mismatched_key
+tests/test_materializer.py::test_validate_kafka_key_rejects_none_key
+tests/test_materializer.py::test_initialize_database_creates_table
+tests/test_materializer.py::test_upsert_aggregate_creates_row_on_first_insert
+tests/test_materializer.py::test_upsert_aggregate_distinct_keys_create_separate_rows
+tests/test_materializer.py::test_upsert_aggregate_money_values_are_integers
+tests/test_materializer.py::test_materialize_record_persists_valid_aggregate
+tests/test_materializer.py::test_materialize_record_invalid_aggregate_does_not_modify_db
+tests/test_materializer.py::test_materialize_record_kafka_key_mismatch_does_not_modify_db
+tests/test_materializer.py::test_materialize_record_rolls_back_on_sqlite_failure
+tests/test_materializer.py::test_materialize_record_exact_duplicate_is_idempotent
+tests/test_materializer.py::test_materialize_record_same_key_updates_existing_row
+tests/test_materializer.py::test_resolve_bootstrap_servers_cli_takes_precedence
+tests/test_materializer.py::test_resolve_bootstrap_servers_falls_back_to_env
+tests/test_materializer.py::test_resolve_bootstrap_servers_falls_back_to_default
+
+23 tests collected in 0.32s
+EXIT_CODE=0
+
+============================================================
+
+$ uv run pytest -q
+........................................................................ [ 65%]
+......................................                                   [100%]
+110 passed in 13.09s
+Really destroying service at localhost:52979 with cmd: ('C:\\Users\\Eduardo Riquelme/.apache_beam/cache/prism/bin\\apache_beam-v2.75.0-prism-windows-amd64', '--job_port', '52979', '--log_level', 'info', '--log_kind', 'json', '--serve_http=false')
+EXIT_CODE=0

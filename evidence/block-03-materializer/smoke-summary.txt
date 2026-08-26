@@ -1,0 +1,38 @@
+============================================================
+RESUMEN SMOKE BLOQUE 3 - materializador idempotente
+============================================================
+
+- Se publicaron 3 aggregates en payments.aggregates.v1.
+- 2 de esos 3 mensajes usan la misma aggregate_key
+  (merchant-001|2026-01-01T12:00:00.000Z).
+- El materializer consume con auto commit desactivado
+  (enable_auto_commit=False).
+- Cada registro se persiste en SQLite (UPSERT) ANTES de commitear su
+  offset en Kafka.
+- El commit a Kafka es explicito, por TopicPartition y con offset+1 del
+  registro procesado (no un commit global de todas las particiones).
+- Los 3 mensajes de entrada producen 2 filas finales en SQLite.
+- La segunda version de merchant-001 (transaction_count=2, total=35000)
+  reemplaza a la primera (transaction_count=1, total=10000) mediante
+  UPSERT (ON CONFLICT(aggregate_key) DO UPDATE).
+- Repetir la misma aggregate_key no crea una fila adicional: merchant-001
+  queda con una unica fila.
+
+Semantica declarada:
+    at-least-once consumption + idempotent UPSERT sink.
+    NO es exactly-once.
+
+Manejo de errores (por diseno y cubierto por tests unitarios, NO
+ejercitado en este smoke):
+- Ante un aggregate invalido (UTF-8/JSON invalido, contrato invalido,
+  Kafka key None o inconsistente) o ante un error de SQLite: fail-fast,
+  el proceso termina con exit code != 0 y NO commitea el offset de ese
+  mensaje.
+- No hay DLQ de aggregates en este bloque: un "poison message" requiere
+  intervencion manual.
+
+Este smoke verifica el camino feliz y la idempotencia por UPSERT.
+No verifica escenarios de fallo ni crashes. Los errores de validacion y
+SQLite estan cubiertos por tests unitarios; el comportamiento ante un crash
+se justifica por el orden de persistencia SQLite -> commit Kafka y el UPSERT
+idempotente.
