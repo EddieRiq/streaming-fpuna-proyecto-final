@@ -1,0 +1,28 @@
+============================================================
+E2E SUMMARY - Bloque 4 de 5
+============================================================
+
+- 10 eventos producidos en payments.events.v1.
+- Beam (KafkaIO, --max-num-records 10, JDK 17 scoped) consumio los 10;
+  consumer group streaming-payments-pipeline con LAG total 0.
+- 1 evento invalido (sin event_id) fue a payments.events.dlq.v1
+  (total DLQ records = 1).
+- El duplicate E7 (mismo event_id que E3) no inflo los aggregates.
+- 3 aggregate records escritos en payments.aggregates.v1 (N = 3),
+  3 aggregate_key distintas, un solo pane por key en esta corrida.
+- Materializer consumio N = 3 con --max-messages 3; consumer group
+  streaming-payments-materializer con LAG total 0.
+- SQLite (data/materialized.db) termino con 3 aggregate_key.
+- count logico final = 6.
+- total final = 1527772 PYG.
+- Las 3 filas SQLite coinciden exactamente con el ultimo aggregate por key
+  (last(k)) en merchant_id, window_start, window_end, transaction_count y
+  total_amount_pyg.
+- transaction_count y total_amount_pyg se almacenan como INTEGER en SQLite.
+- E8 (evento late) aparecio en esta corrida bounded (count 1, total 240682,
+  window_start 23:40:00Z).
+- La aparicion de E8 NO se usa como prueba de allowed lateness. La semantica
+  exacta de watermark / allowed lateness / panes se prueba con TestStream en
+  el Bloque 1.
+- Semantica declarada: at-least-once + UPSERT idempotente.
+- NO exactly-once.

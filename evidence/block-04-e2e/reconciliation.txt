@@ -1,0 +1,108 @@
+============================================================
+RECONCILIACION E2E - Bloque 4
+============================================================
+
+Comprobacion tecnica principal del E2E.
+
+------------------------------------------------------------
+INPUT
+------------------------------------------------------------
+    10 eventos publicados en payments.events.v1
+    end offsets: p0=6, p1=4, p2=0  -> total 10
+
+------------------------------------------------------------
+VALIDACION
+------------------------------------------------------------
+    1 invalido -> DLQ  (E9, falta event_id)
+    total DLQ records = 1
+
+------------------------------------------------------------
+CONFIRMED validos antes de dedup
+------------------------------------------------------------
+    7   (E1, E3, E5, E6, E7, E8, E10)
+
+------------------------------------------------------------
+DUPLICADO
+------------------------------------------------------------
+    E7 repite el event_id de E3
+    (6cecc258-1bfa-430d-9d68-5155e98cd7d9)
+
+------------------------------------------------------------
+CONFIRMED unicos potenciales
+------------------------------------------------------------
+    6   (E1, E3, E5, E6, E8, E10)   -- E7 eliminado por dedup
+
+------------------------------------------------------------
+AGGREGATES reales
+------------------------------------------------------------
+    N = 3
+    3 aggregate_key distintas
+    ninguna tuvo mas de un pane en esta corrida
+
+------------------------------------------------------------
+last(k)
+------------------------------------------------------------
+    Como cada key tiene un solo mensaje,
+    last(k) = ese mensaje
+    (seleccion: aggregate_key, particion de esa key, mayor offset en esa particion)
+
+    merchant-002|2026-08-26T23:43:00.000Z  (part 2, off 0)  count 2  total 484422
+    merchant-003|2026-08-26T23:43:00.000Z  (part 1, off 0)  count 3  total 802668
+    merchant-002|2026-08-26T23:40:00.000Z  (part 0, off 0)  count 1  total 240682
+
+------------------------------------------------------------
+Suma sobre last(k)
+------------------------------------------------------------
+    transaction_count:
+        2 + 3 + 1 = 6
+
+    total_amount_pyg:
+        484422 + 802668 + 240682 = 1527772
+
+------------------------------------------------------------
+Dedup
+------------------------------------------------------------
+    merchant-003 ventana reciente = count 3
+    total 802668
+
+    Si E7 hubiese inflado:
+        habria un +1 y +400264 adicionales.
+
+    Eso NO ocurrio.
+
+------------------------------------------------------------
+E8
+------------------------------------------------------------
+    Aparecio en esta corrida bounded:
+        count 1
+        total 240682
+        window_start 2026-08-26T23:40:00.000Z
+
+    IMPORTANTE:
+        La aparicion de E8 en este E2E NO se usa como evidencia del
+        comportamiento exacto de allowed lateness / watermark.
+        Esa semantica esta demostrada con TestStream en el Bloque 1.
+
+------------------------------------------------------------
+SQLite vs Kafka
+------------------------------------------------------------
+    Las 3 filas SQLite coinciden exactamente con last(k) en:
+        merchant_id
+        window_start
+        window_end
+        transaction_count
+        total_amount_pyg
+
+------------------------------------------------------------
+Global
+------------------------------------------------------------
+    SQLite count logico     = 6
+    Kafka last(k) count logico = 6
+
+    SQLite amount           = 1527772
+    Kafka last(k) amount    = 1527772
+
+------------------------------------------------------------
+Resultado
+------------------------------------------------------------
+    reconciliacion exacta.

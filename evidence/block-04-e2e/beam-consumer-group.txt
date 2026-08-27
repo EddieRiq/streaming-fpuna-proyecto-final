@@ -1,0 +1,24 @@
+============================================================
+CONSUMER GROUP streaming-payments-pipeline - consulta read-only
+============================================================
+
+Consulta ejecutada despues del E2E. No se reinicio ni modifico el grupo.
+
+$ docker exec kafka kafka-consumer-groups --bootstrap-server localhost:29092 \
+    --describe --group streaming-payments-pipeline
+
+Consumer group 'streaming-payments-pipeline' has no active members.
+
+GROUP                       TOPIC              PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG
+streaming-payments-pipeline payments.events.v1 0          6               6               0
+streaming-payments-pipeline payments.events.v1 1          4               4               0
+streaming-payments-pipeline payments.events.v1 2          0               0               0
+
+Verificacion:
+    - sin active members
+    - LAG total = 0
+    - partition 0: CURRENT 6 / LOG-END 6 / LAG 0
+    - partition 1: CURRENT 4 / LOG-END 4 / LAG 0
+    - partition 2: CURRENT 0 / LOG-END 0 / LAG 0
+    - toda particion con offset numerico: CURRENT-OFFSET == LOG-END-OFFSET
+    - Sigma CURRENT-OFFSET = 10  (= 10 eventos consumidos por Beam)

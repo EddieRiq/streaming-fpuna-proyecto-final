@@ -1,0 +1,78 @@
+============================================================
+BEAM KafkaIO - documentacion de la corrida ya ejecutada
+============================================================
+
+No se volvio a ejecutar Beam para generar este archivo.
+
+------------------------------------------------------------
+JDK SCOPED (JDK 17 solo para esta invocacion)
+------------------------------------------------------------
+
+JAVA_HOME usado (scoped, solo en el comando de Beam):
+    C:\Program Files\Microsoft\jdk-17.0.20.101-hotspot
+
+Java usado:
+    openjdk version "17.0.20.1" 2026-08-18 LTS
+    OpenJDK Runtime Environment Microsoft-14940689 (build 17.0.20.1+1-LTS)
+    OpenJDK 64-Bit Server VM Microsoft-14940689 (build 17.0.20.1+1-LTS, mixed mode, sharing)
+
+JAVA_HOME persistente del usuario (NO modificado):
+    C:\Program Files\Java\jdk1.8.0_202   (Java 8)
+
+Explicito:
+    - JDK 17 se uso solamente para esa invocacion (prefijo de entorno en el
+      propio comando, igual mecanismo que el Bloque 2).
+    - No se modifico JAVA_HOME persistente del usuario.
+    - El expansion service de KafkaIO arranco con:
+      C:\Program Files\Microsoft\jdk-17.0.20.101-hotspot\bin\java
+      (visible en la linea "Really starting service ... cmd: [...\jdk-17...\bin\java', ...]").
+    - Verificar `java -version` del entorno global NO se usa como criterio de
+      exito. Para esta corrida, Beam se ejecuto con JAVA_HOME definido de forma
+      scoped al JDK 17. El JAVA_HOME persistente del usuario sigue apuntando a
+      Java 8 y no fue modificado.
+
+------------------------------------------------------------
+COMANDO
+------------------------------------------------------------
+
+    uv run python -m streaming_payments.pipeline.kafka_pipeline \
+      --bootstrap-servers localhost:9092 \
+      --input-topic payments.events.v1 \
+      --aggregates-topic payments.aggregates.v1 \
+      --dlq-topic payments.events.dlq.v1 \
+      --max-num-records 10
+
+(ejecutado con JAVA_HOME scoped al JDK 17 indicado arriba)
+
+------------------------------------------------------------
+RESULTADO
+------------------------------------------------------------
+
+    exit code           = 0
+    terminacion         = natural (alcanzo --max-num-records 10)
+    traceback           = ninguno
+
+stdout/stderr real conservado:
+
+    2 lineas WARNING de apache_beam.utils.subprocess_server:
+      - "Really starting service at localhost:53643 with cmd: [ ...\jdk-17.0.20.101-hotspot\bin\java ... expansion-service-2.75.0.jar ... --alsoStartLoopbackWorker ]"
+      - "Really destroying service at localhost:53643 with cmd: [ ...mismo java del JDK 17... ]"
+
+    (transcripcion abreviada; el java invocado es el del JDK 17 scoped)
+
+Observacion:
+    "Really destroying service ..." corresponde al cierre normal del
+    expansion service / runner local. No hubo traceback posterior.
+    El proceso termino con exit code 0.
+
+------------------------------------------------------------
+LIMITACION LOCAL YA CONOCIDA
+------------------------------------------------------------
+
+    - El pipeline productivo sigue siendo unbounded por defecto
+      (build_pipeline(..., max_num_records=None)).
+    - --max-num-records 10 se usa unicamente para este E2E local con
+      DirectRunner + KafkaIO cross-language sobre Windows, donde WriteToKafka
+      no materializa sus escrituras mientras la fuente permanece unbounded.
+    - Esta es una limitacion observada del entorno local; no se generaliza a
+      Beam ni al diseno del pipeline.

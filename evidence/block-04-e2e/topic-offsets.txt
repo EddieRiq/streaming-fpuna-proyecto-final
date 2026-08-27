@@ -1,0 +1,42 @@
+============================================================
+TOPIC OFFSETS - consulta read-only (GetOffsetShell, --time -1)
+============================================================
+
+Consultas ejecutadas despues del E2E, sin modificar consumer groups ni
+publicar/consumir mensajes.
+
+$ docker exec kafka kafka-run-class kafka.tools.GetOffsetShell \
+    --broker-list localhost:29092 --topic payments.events.v1 --time -1
+payments.events.v1:0:6
+payments.events.v1:1:4
+payments.events.v1:2:0
+
+    payments.events.v1
+        p0 = 6
+        p1 = 4
+        p2 = 0
+        total end offsets = 10
+
+$ docker exec kafka kafka-run-class kafka.tools.GetOffsetShell \
+    --broker-list localhost:29092 --topic payments.events.dlq.v1 --time -1
+payments.events.dlq.v1:0:1
+
+    payments.events.dlq.v1
+        p0 = 1
+        total end offsets = 1
+
+$ docker exec kafka kafka-run-class kafka.tools.GetOffsetShell \
+    --broker-list localhost:29092 --topic payments.aggregates.v1 --time -1
+payments.aggregates.v1:0:1
+payments.aggregates.v1:1:1
+payments.aggregates.v1:2:1
+
+    payments.aggregates.v1
+        p0 = 1
+        p1 = 1
+        p2 = 1
+        N = 3
+
+Nota: los tres topics se recrearon con `docker compose down -v` al inicio del
+E2E, por lo que el offset inicial de cada particion es 0 y "total end offsets"
+== numero real de registros.

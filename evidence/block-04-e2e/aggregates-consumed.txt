@@ -1,0 +1,63 @@
+============================================================
+payments.aggregates.v1 - 3 aggregates observados en el E2E
+============================================================
+
+N = 3   (Sigma end offsets: p0=1, p1=1, p2=1)
+
+Capturado durante el E2E con kafka-console-consumer (grupo efimero, sin
+impacto sobre streaming-payments-materializer), imprimiendo partition,
+offset y key. schema_version = 1 en los tres.
+
+------------------------------------------------------------
+Aggregate 1
+------------------------------------------------------------
+    partition          = 2
+    offset             = 0
+    Kafka key          = merchant-002|2026-08-26T23:43:00.000Z
+    schema_version     = 1
+    merchant_id        = merchant-002
+    window_start       = 2026-08-26T23:43:00.000Z
+    window_end         = 2026-08-26T23:44:00.000Z
+    transaction_count  = 2
+    total_amount_pyg   = 484422
+
+------------------------------------------------------------
+Aggregate 2
+------------------------------------------------------------
+    partition          = 1
+    offset             = 0
+    Kafka key          = merchant-003|2026-08-26T23:43:00.000Z
+    schema_version     = 1
+    merchant_id        = merchant-003
+    window_start       = 2026-08-26T23:43:00.000Z
+    window_end         = 2026-08-26T23:44:00.000Z
+    transaction_count  = 3
+    total_amount_pyg   = 802668
+
+------------------------------------------------------------
+Aggregate 3
+------------------------------------------------------------
+    partition          = 0
+    offset             = 0
+    Kafka key          = merchant-002|2026-08-26T23:40:00.000Z
+    schema_version     = 1
+    merchant_id        = merchant-002
+    window_start       = 2026-08-26T23:40:00.000Z
+    window_end         = 2026-08-26T23:41:00.000Z
+    transaction_count  = 1
+    total_amount_pyg   = 240682
+
+------------------------------------------------------------
+Verificacion
+------------------------------------------------------------
+    - Kafka key == value["key"] en los 3 mensajes.
+    - value["key"] == f"{merchant_id}|{window_start}" en los 3.
+    - N = 3.
+    - Las 3 aggregate_key son distintas.
+    - Cada key tuvo solamente un mensaje en esta corrida
+      (un solo offset por particion, sin panes adicionales).
+    - Por lo tanto last(k) = ese unico mensaje, tomado como
+      (aggregate_key, particion de esa key, mayor offset dentro de esa particion).
+
+    No se requiere demostrar UPSERT con multiples panes en esta corrida;
+    eso ya quedo probado en el Bloque 3.

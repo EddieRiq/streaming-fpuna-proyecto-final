@@ -1,0 +1,56 @@
+============================================================
+DLQ payments.events.dlq.v1 - unico mensaje observado en el E2E
+============================================================
+
+total DLQ records = 1
+
+Capturado durante el E2E con kafka-console-consumer (grupo efimero, sin
+impacto sobre ningun consumer group del proyecto), imprimiendo partition,
+offset y key.
+
+Mensaje unico:
+
+    partition = 0
+    offset    = 0
+    Kafka key = vacia
+
+    errors:
+        ["falta 'event_id'"]
+
+    raw_data.payload.transaction_id:
+        txn-93c9c8fef8436035
+
+    raw_data.payload.amount:
+        325362
+
+    raw_data.payload.merchant_id:
+        merchant-003
+
+    raw_data.payload.status:
+        CONFIRMED
+
+    raw_data.event_time:
+        2026-08-26T23:43:39.000Z
+
+Transcripcion estructurada de la linea observada (NO es captura raw literal;
+la linea original de kafka-console-consumer es demasiado larga para mostrarse
+comodamente en el preview):
+
+    Partition: 0
+    Offset:    0
+    Key:       <vacia>  (entre los separadores " || " no hay ningun caracter)
+    Value (JSON):
+        errors:   ["falta 'event_id'"]
+        raw_data:
+            schema_version: 1
+            key:            "merchant-003"
+            event_time:     "2026-08-26T23:43:39.000Z"
+            payload:
+                account_id:     "account-009"
+                amount:         325362
+                currency:       "PYG"
+                merchant_id:    "merchant-003"
+                status:         "CONFIRMED"
+                transaction_id: "txn-93c9c8fef8436035"
+
+Corresponde a E9 del escenario demo (evento sin event_id).

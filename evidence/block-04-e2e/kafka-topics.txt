@@ -1,0 +1,20 @@
+$ docker exec kafka kafka-topics --bootstrap-server localhost:29092 --describe --topic payments.events.v1
+Topic: payments.events.v1	TopicId: ttKXyfQKRdamqcm6qH2AZg	PartitionCount: 3	ReplicationFactor: 1	Configs:
+	Topic: payments.events.v1	Partition: 0	Leader: 1	Replicas: 1	Isr: 1
+	Topic: payments.events.v1	Partition: 1	Leader: 1	Replicas: 1	Isr: 1
+	Topic: payments.events.v1	Partition: 2	Leader: 1	Replicas: 1	Isr: 1
+
+$ docker exec kafka kafka-topics --bootstrap-server localhost:29092 --describe --topic payments.aggregates.v1
+Topic: payments.aggregates.v1	TopicId: adVDOoGJR8CAOl3EUfXn8w	PartitionCount: 3	ReplicationFactor: 1	Configs:
+	Topic: payments.aggregates.v1	Partition: 0	Leader: 1	Replicas: 1	Isr: 1
+	Topic: payments.aggregates.v1	Partition: 1	Leader: 1	Replicas: 1	Isr: 1
+	Topic: payments.aggregates.v1	Partition: 2	Leader: 1	Replicas: 1	Isr: 1
+
+$ docker exec kafka kafka-topics --bootstrap-server localhost:29092 --describe --topic payments.events.dlq.v1
+Topic: payments.events.dlq.v1	TopicId: J3AkyMTpSVOWQ5PHTQrZ7w	PartitionCount: 1	ReplicationFactor: 1	Configs:
+	Topic: payments.events.dlq.v1	Partition: 0	Leader: 1	Replicas: 1	Isr: 1
+
+Resumen:
+    payments.events.v1      -> 3 particiones
+    payments.aggregates.v1  -> 3 particiones
+    payments.events.dlq.v1  -> 1 particion

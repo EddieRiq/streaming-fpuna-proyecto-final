@@ -1,0 +1,64 @@
+============================================================
+PRODUCER DEMO - documentacion de la corrida ya ejecutada
+============================================================
+
+Este archivo documenta la corrida del producer ya ejecutada durante el E2E
+del Bloque 4. No es una captura raw literal completa: es documentacion de la
+corrida, con el stdout real que se conservo.
+
+Comando:
+
+    uv run python -m streaming_payments.producer.producer \
+      --scenario demo \
+      --start-now
+
+Datos reales de la corrida:
+
+    exit code            = 0
+    base aproximada      = 2026-08-26T23:43:30Z
+      (wall clock UTC medido justo antes de la ejecucion: 2026-08-26T23:43:30)
+    eventos publicados   = 10
+    topic destino        = payments.events.v1
+
+Tags publicados (en orden):
+
+    normal
+    normal
+    normal
+    normal
+    normal
+    out_of_order
+    duplicate
+    late
+    invalid
+    normal
+
+    -> normal x6, out_of_order x1, duplicate x1, late x1, invalid x1
+
+stdout real conservado (una linea por evento):
+
+    [normal] event_id=c6737b8b-2a6a-4b5f-bb5d-75b895f628f2
+    [normal] event_id=643cb56d-4ec1-4fc6-bee2-9f53ebf644bb
+    [normal] event_id=6cecc258-1bfa-430d-9d68-5155e98cd7d9
+    [normal] event_id=e369ab3d-591d-4569-ab0a-0d83b2ff5134
+    [normal] event_id=d51f25e6-0490-492a-a9eb-72624f93de30
+    [out_of_order] event_id=da1298c4-cbb4-42ae-abd4-e7abf522dfdc
+    [duplicate] event_id=6cecc258-1bfa-430d-9d68-5155e98cd7d9
+    [late] event_id=113a972f-8c39-46bb-b373-85edcdd25aa1
+    [invalid] event_id=<missing>
+    [normal] event_id=1ac66dea-3270-4980-b262-c798a28f38bd
+
+Puntos clave del escenario:
+
+    E7 (duplicate)  repite el event_id de E3
+                    (6cecc258-1bfa-430d-9d68-5155e98cd7d9).
+    E9 (invalid)    no tiene event_id (stdout: <missing>).
+    E8 (late)       event_time = base - 210s
+                    (WINDOW_SIZE_SECONDS 60 + ALLOWED_LATENESS_SECONDS 120 + 30).
+
+Comprobacion real de offsets de payments.events.v1 (read-only, GetOffsetShell):
+
+    payments.events.v1:0:6      -> p0 = 6
+    payments.events.v1:1:4      -> p1 = 4
+    payments.events.v1:2:0      -> p2 = 0
+    total end offsets          = 10

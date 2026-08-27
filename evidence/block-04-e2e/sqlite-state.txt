@@ -1,0 +1,54 @@
+============================================================
+SQLite data/materialized.db - estado final del E2E
+============================================================
+
+Consulta read-only con Python stdlib sqlite3, despues del E2E.
+
+SELECT aggregate_key, merchant_id, window_start, window_end,
+       transaction_count, total_amount_pyg,
+       typeof(transaction_count), typeof(total_amount_pyg)
+FROM merchant_window_aggregates
+ORDER BY aggregate_key;
+
+------------------------------------------------------------
+Fila 1
+------------------------------------------------------------
+    aggregate_key            = merchant-002|2026-08-26T23:40:00.000Z
+    merchant_id              = merchant-002
+    window_start             = 2026-08-26T23:40:00.000Z
+    window_end               = 2026-08-26T23:41:00.000Z
+    transaction_count        = 1
+    total_amount_pyg         = 240682
+    typeof(transaction_count)= integer
+    typeof(total_amount_pyg) = integer
+
+------------------------------------------------------------
+Fila 2
+------------------------------------------------------------
+    aggregate_key            = merchant-002|2026-08-26T23:43:00.000Z
+    merchant_id              = merchant-002
+    window_start             = 2026-08-26T23:43:00.000Z
+    window_end               = 2026-08-26T23:44:00.000Z
+    transaction_count        = 2
+    total_amount_pyg         = 484422
+    typeof(transaction_count)= integer
+    typeof(total_amount_pyg) = integer
+
+------------------------------------------------------------
+Fila 3
+------------------------------------------------------------
+    aggregate_key            = merchant-003|2026-08-26T23:43:00.000Z
+    merchant_id              = merchant-003
+    window_start             = 2026-08-26T23:43:00.000Z
+    window_end               = 2026-08-26T23:44:00.000Z
+    transaction_count        = 3
+    total_amount_pyg         = 802668
+    typeof(transaction_count)= integer
+    typeof(total_amount_pyg) = integer
+
+------------------------------------------------------------
+Agregados
+------------------------------------------------------------
+    COUNT(*)               = 3
+    SUM(transaction_count) = 6
+    SUM(total_amount_pyg)  = 1527772

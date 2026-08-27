@@ -1,0 +1,51 @@
+============================================================
+MATERIALIZER - documentacion de la corrida ya ejecutada
+============================================================
+
+No se volvio a ejecutar el materializer para generar este archivo.
+
+Comando:
+
+    uv run python -m streaming_payments.materializer.materializer \
+      --bootstrap-servers localhost:9092 \
+      --topic payments.aggregates.v1 \
+      --db-path data/materialized.db \
+      --max-messages 3
+
+    N dinamico = 3
+      (obtenido antes de correrlo: Sigma end offsets de payments.aggregates.v1
+       = p0:1 + p1:1 + p2:1 = 3, con GetOffsetShell read-only)
+
+Resultado:
+
+    exit code    = 0
+    terminacion  = natural (alcanzo --max-messages 3)
+    sin salida en stdout/stderr (el modulo solo imprime ante error o
+        KeyboardInterrupt)
+
+------------------------------------------------------------
+CONSUMER GROUP streaming-payments-materializer (consulta read-only)
+------------------------------------------------------------
+
+$ docker exec kafka kafka-consumer-groups --bootstrap-server localhost:29092 \
+    --describe --group streaming-payments-materializer
+
+Consumer group 'streaming-payments-materializer' has no active members.
+
+GROUP                           TOPIC                  PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG
+streaming-payments-materializer payments.aggregates.v1 0          1               1               0
+streaming-payments-materializer payments.aggregates.v1 1          1               1               0
+streaming-payments-materializer payments.aggregates.v1 2          1               1               0
+
+Verificacion:
+    - sin active members
+    - LAG total = 0
+    - cada particion: CURRENT = 1, LOG-END = 1, LAG = 0
+    - Sigma CURRENT-OFFSET = 3 = N
+
+------------------------------------------------------------
+SEMANTICA
+------------------------------------------------------------
+
+    at-least-once consumption + idempotent UPSERT sink.
+    NO es exactly-once.
