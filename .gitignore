@@ -17,6 +17,9 @@ dist/
 # Environment
 .env
 
+# Configuración local de Claude Code
+.claude/
+
 # Materializer SQLite (generado localmente, no versionar)
 data/*.db
 data/*.db-shm

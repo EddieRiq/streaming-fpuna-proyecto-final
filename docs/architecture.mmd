@@ -1,5 +1,0 @@
-flowchart LR
-    Producer[Productor sintético] --> KafkaIn[(Kafka: payments.events.v1)]
-    KafkaIn --> Beam[Apache Beam pipeline]
-    Beam --> KafkaOut[(Kafka: payments.aggregates.v1)]
-    KafkaOut --> Materializer[Materializador idempotente]
